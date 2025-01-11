@@ -1,23 +1,32 @@
 import copy
-
 import numpy as np
 import tensorflow as tf
 from colorama import Fore, Style, init, deinit
 from keras.models import load_model
-
+from keras.layers import TFSMLayer
 from src.Utils import Expected_Value
 from src.Utils import Kelly_Criterion as kc
 
 init()
-model = load_model('Models/NN_Models/Trained-Model-ML-1699315388.285516')
-ou_model = load_model("Models/NN_Models/Trained-Model-OU-1699315414.2268295")
 
+_model = None
+_ou_model = None
+
+def _load_models():
+    """Load models using TFSMLayer for Keras 3 compatibility"""
+    global _model, _ou_model
+    if _model is None:
+        _model = TFSMLayer('Models/NN_Models/Trained-Model-ML-1699315388.285516', call_endpoint='serving_default')
+    if _ou_model is None:
+        _ou_model = TFSMLayer('Models/NN_Models/Trained-Model-OU-1699315414.2268295', call_endpoint='serving_default')
 
 def nn_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team_odds, kelly_criterion):
+    _load_models()
+    
     ml_predictions_array = []
 
     for row in data:
-        ml_predictions_array.append(model.predict(np.array([row])))
+        ml_predictions_array.append(_model(np.array([row])))
 
     frame_uo = copy.deepcopy(frame_ml)
     frame_uo['OU'] = np.asarray(todays_games_uo)
@@ -28,8 +37,9 @@ def nn_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team_
     ou_predictions_array = []
 
     for row in data:
-        ou_predictions_array.append(ou_model.predict(np.array([row])))
+        ou_predictions_array.append(_ou_model(np.array([row])))
 
+    # Rest of the code remains the same
     count = 0
     for game in games:
         home_team = game[0]
@@ -59,6 +69,7 @@ def nn_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team_
                 print(Fore.RED + home_team + Style.RESET_ALL + ' vs ' + Fore.GREEN + away_team + Style.RESET_ALL + Fore.CYAN + f" ({winner_confidence}%)" + Style.RESET_ALL + ': ' +
                       Fore.BLUE + 'OVER ' + Style.RESET_ALL + str(todays_games_uo[count]) + Style.RESET_ALL + Fore.CYAN + f" ({un_confidence}%)" + Style.RESET_ALL)
         count += 1
+
     if kelly_criterion:
         print("------------Expected Value & Kelly Criterion-----------")
     else:
