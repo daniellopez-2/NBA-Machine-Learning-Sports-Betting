@@ -26,7 +26,10 @@ data_url = 'https://stats.nba.com/stats/leaguedashteamstats?' \
 def get_odds(sportsbook):
     """Get odds from the-odds-api.com"""
     base_url = "https://api.the-odds-api.com/v4/sports/basketball_nba/odds/"
-    api_key = "c98770fc3b542b9e093a9b2fdf732436"
+    api_key = "7c420299a4eb936dd39aebecc3d54fb8"
+    if not api_key:
+        print(Fore.RED + "No API key found. Please set ODDS_API_KEY environment variable" + Style.RESET_ALL)
+        return None
 
     params = {
         "apiKey": api_key,
